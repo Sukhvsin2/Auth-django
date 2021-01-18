@@ -3,7 +3,7 @@ from django.db import models
 
 class UserManager(BaseUserManager):
 
-    def create_user(self, username, first_name, last_name, email, password=None):
+    def create_user(self, username, email, password=None):
 
         if username is None:
             raise TypeError('Username is Missing!')
@@ -11,8 +11,6 @@ class UserManager(BaseUserManager):
             raise TypeError('Email is Missing!')
 
         user = self.model(username=username, email=self.normalize_email(email))
-        user.first_name = first_name
-        user.last_name = last_name
         user.set_password(password)
         user.save()
         return user
