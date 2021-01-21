@@ -1,5 +1,6 @@
 from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager, PermissionsMixin)
 from django.db import models
+from django.contrib.auth.hashers import make_password
 
 class UserManager(BaseUserManager):
 
@@ -13,7 +14,7 @@ class UserManager(BaseUserManager):
         user = self.model(username=username, email=self.normalize_email(email))
         user.set_password(password)
         user.save()
-        return user
+        # return user
 
     def create_superuser(self, username, email, password=None):
 
