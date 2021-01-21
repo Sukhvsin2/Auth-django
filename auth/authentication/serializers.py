@@ -1,35 +1,60 @@
 from rest_framework import serializers
 from .models import User
+from django.contrib import auth
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
 class RegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(min_length=6, max_length=66, write_only=True)
-
+    password = serializers.CharField(max_length=68, min_length=8, write_only=True)
+    
     class Meta:
         model = User
         fields = ['email', 'username', 'password']
 
-        def validate(self, attrs):
-            username = attrs.get('username', '')
-            email = attrs.get('email', '')
-            password = attrs.get('password', '')
+    def validate(self, attrs):
+        email = attrs.get('email', '')
+        username = attrs.get('username','')
 
-            # if not username.isalnum():
-            #     raise serializers.ValidationError('Username should not contain any alphanumeric character')
+        if not username.isalnum():
+            raise serializers.ValidationError('Username can\'t have special character!')
 
-            if first_name is None:
-                raise serializers.ValidationError('First Name should not be empty!')
+        return attrs
 
-            if len(username) > 25:
-                raise serializers.ValidationError('Username should not contain letters more than 25')
-
-            return attrs
-
-        def create(self, validated_data):
-            return User.objects.create_user(**validated_data)
+    def create(self, validated_data):
+        return User.objects.create_user(**validated_data)
 
 class LoginSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(max_length=255)
+    password = serializers.CharField(max_length=68, write_only=True)
+    username = serializers.CharField(max_length=255, read_only=True)
+    tokens = serializers.SerializerMethodField()
+
+    def get_tokens(self, obj):
+        user = User.objects.get(email=obj['email'])
+
+        return {
+            'access': user.tokens()['access'],
+            'refresh': user.tokens()['refresh']
+        }
 
     class Meta:
         model = User
-        fields = ['email', 'password']
+        fields = ['email', 'password', 'username', 'tokens']
+    
+    def validate(self, attrs):
+        email = attrs.get('email', '')
+        password = attrs.get('password', '')
         
+        user = auth.authenticate(email=email, password=password)
+        
+        if not user:
+            raise AuthenticationFailed('Invalid Credentials try again!')
+        
+        if not user.is_active:
+            raise AuthenticationFailed('Account not active, contact Admin')
+
+
+        return {
+            'email': user.email,
+            'username': user.username,
+            'tokens': user.tokens
+        }

@@ -1,6 +1,6 @@
 from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager, PermissionsMixin)
 from django.db import models
-from django.contrib.auth.hashers import make_password
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class UserManager(BaseUserManager):
 
@@ -14,16 +14,15 @@ class UserManager(BaseUserManager):
         user = self.model(username=username, email=self.normalize_email(email))
         user.set_password(password)
         user.save()
-        # return user
+        return user
 
     def create_superuser(self, username, email, password=None):
 
         if password is None:
             raise TypeError('Password is Missing!')
 
-        user = self.create_user(username, email, password)
+        user = self.create_user(username,email,password)
         user.is_superuser = True
-        user.is_active = True
         user.is_staff = True
         user.save()
         return user
@@ -48,6 +47,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.email
 
     def tokens(self):
-        return ''    
+        refresh = RefreshToken.for_user(self)
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token)
+        }
 
 
